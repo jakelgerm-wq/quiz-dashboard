@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exam Dashboard Pro</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="dark-theme">
+
+    <section id="page1" class="page active">
+        <h1 class="center-title"><span style="color:var(--primary);">Initialize</span> Session</h1>
+        <div class="subject-grid">
+            <div class="sub-box" onclick="openPopup('Reasoning')">Reasoning</div>
+            <div class="sub-box" onclick="openPopup('Mathematics')">Mathematics</div>
+            <div class="sub-box" onclick="openPopup('English')">English</div>
+            <div class="sub-box" onclick="openPopup('Gen. Awareness')">Gen. Awareness</div>
+        </div>
+
+        <div id="setup-popup" class="popup-overlay">
+            <div class="popup-content">
+                <h2>Setup <span id="sub-name"></span></h2>
+                <input type="number" id="qty-input" class="no-arrows" placeholder="How many questions?">
+                <div class="popup-btn-row">
+                    <button class="btn-cancel" onclick="closePopup()">Cancel</button>
+                    <button class="btn-begin" onclick="startQuiz()">Begin Quiz</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="page2" class="page">
+        <div class="page-header">
+            <h2 id="current-sub">Subject</h2>
+            <div class="timer-text">Session Time: <span id="timer">00:00:00</span></div>
+        </div>
+        <div id="quiz-grid" class="question-container"></div>
+        <div class="footer-nav">
+            <button class="btn-primary" onclick="showPage(3)">Next: Review Key →</button>
+        </div>
+    </section>
+
+    <section id="page3" class="page">
+        <div class="page-header">
+            <h2>Answer Key Input</h2>
+            <p style="font-size: 0.8rem; color: #8b949e;">Enter the correct answers to generate stats.</p>
+        </div>
+        <div id="key-grid" class="question-container"></div>
+        <div class="footer-nav">
+            <button class="btn-back" onclick="showPage(2)">← Edit Answers</button>
+            <button class="btn-submit" onclick="processResults()">Calculate Stats →</button>
+        </div>
+    </section>
+
+    <section id="page4" class="page">
+        <div class="stats-container">
+            <h1 class="dashboard-title">Performance Dashboard</h1>
+            <div class="chart-grid">
+                <div class="chart-card">
+                    <h3>Accuracy</h3>
+                    <div class="canvas-holder"><canvas id="c1"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <h3>Score Distribution</h3>
+                    <div class="canvas-holder"><canvas id="c2"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <h3>Performance Curve</h3>
+                    <div class="canvas-holder"><canvas id="c3"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <h3>Daily Progress</h3>
+                    <div class="canvas-holder"><canvas id="c4"></canvas></div>
+                </div>
+            </div>
+			<div class="history-section">
+			<h3>Historical Progress</h3>
+			<div class="table-scroll">
+				<table id="history-table">
+					<thead>
+						<tr>
+							<th>Date</th>
+							<th>Subject</th>
+							<th>Score</th>
+							<th>Time</th>
+						</tr>
+					</thead>
+					<tbody id="history-body">
+						</tbody>
+				</table>
+			</div>
+			</div>
+            <div class="final-footer">
+                <button class="btn-home-final" onclick="location.reload()">
+                    🏠 Back to Home
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <script src="script.js"></script>
+</body>
+</html>
