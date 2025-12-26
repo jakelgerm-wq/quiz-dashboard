@@ -5,11 +5,12 @@ let state = {
     answers: {}, 
     key: {}, 
     start: null, 
-    timer: null 
+    timer: null,
+    totalSeconds: 0 
 };
 
 // Replace with your current Google Web App URL
-const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz2VoZJ8ejf1sefu0X1HF5fiCwNKqGp4M0udcYstFBLMLrGw2P0FA7AOZnjiLauXRM2/exec";
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby0U7038RLpJYZwvRv2ax-lZS1AFE6kzFAaVts7L2o3bUeG2QMEvfHZ-gjRRzqRrN4A/exec";
 
 // 2. Navigation Control
 function showPage(n) {
@@ -18,9 +19,9 @@ function showPage(n) {
     window.scrollTo(0, 0);
 }
 
-// 3. Setup Logic (Fixed Subject Issue)
+// 3. Setup Logic (Ensuring Subject is captured)
 function openPopup(subName) {
-    state.subject = subName; // Standardized: this ensures subject isn't 'Unknown'
+    state.subject = subName; // Fixes the 'Unknown' subject issue
     document.getElementById('sub-name').innerText = subName;
     document.getElementById('setup-popup').style.display = 'flex';
 }
@@ -38,31 +39,47 @@ function startQuiz() {
     }
 
     closePopup();
-    
-    // Set UI Title
     document.getElementById('current-sub').innerText = state.subject;
     
-    // Clear previous session data
     state.answers = {};
     state.key = {};
     
-    // Render dynamic grids
     renderGrid('quiz-grid', 'answers', 'Question');
     renderGrid('key-grid', 'key', 'Key');
     
-    // Start Timer
+    // Start Stopwatch
     state.start = Date.now();
+    state.totalSeconds = 0;
     if (state.timer) clearInterval(state.timer);
+    
     state.timer = setInterval(() => {
-        let diff = Date.now() - state.start;
-        // Format: HH:MM:SS
-        document.getElementById('timer').innerText = new Date(diff).toISOString().substr(11, 8);
+        state.totalSeconds++;
+        const h = Math.floor(state.totalSeconds / 3600);
+        const m = Math.floor((state.totalSeconds % 3600) / 60);
+        const s = state.totalSeconds % 60;
+        
+        // Display for the live timer UI
+        document.getElementById('timer').innerText = 
+            [h, m, s].map(v => v < 10 ? "0" + v : v).join(":");
     }, 1000);
     
     showPage(2);
 }
 
-// 4. Interface Rendering
+// 4. Time Formatting Function
+function formatDuration(totalSecs) {
+    if (totalSecs < 60) {
+        return totalSecs + " sec";
+    } else if (totalSecs < 3600) {
+        const mins = Math.floor(totalSecs / 60);
+        return mins + " min";
+    } else {
+        const hrs = (totalSecs / 3600).toFixed(1);
+        return hrs + " hr";
+    }
+}
+
+// 5. Interface Rendering
 function renderGrid(containerId, dataKey, label) {
     const el = document.getElementById(containerId);
     el.innerHTML = '';
@@ -88,7 +105,7 @@ function sel(key, i, val, btn) {
     btn.classList.add('active');
 }
 
-// 5. Data Processing & Google Sheets Sync
+// 6. Data Processing & Google Sheets Sync
 async function processResults() {
     clearInterval(state.timer);
     let score = 0;
@@ -96,34 +113,30 @@ async function processResults() {
         if(state.answers[i] === state.key[i]) score++;
     }
 
-    const timeTaken = document.getElementById('timer').innerText;
+    // Convert total seconds to readable format (sec, min, or hr)
+    const timeFormatted = formatDuration(state.totalSeconds);
 
-    // Payload keys must match exactly what Google Apps Script expects
     const payload = {
         subject: state.subject,
         count: state.count,
         score: score,
-        time: timeTaken
+        time: timeFormatted
     };
 
-    // Send to Google Sheet
     try {
         await fetch(GOOGLE_SCRIPT_URL, {
             method: "POST",
             mode: "no-cors",
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
-    } catch (e) { 
-        console.error("Save failed", e); 
-    }
+    } catch (e) { console.error("Save failed", e); }
 
     initCharts(score, state.count);
     fetchHistory(); 
     showPage(4);
 }
 
-// 6. Historical Data Loader (Fixed Time/Date Display)
+// 7. Historical Data Loader
 async function fetchHistory() {
     try {
         const response = await fetch(GOOGLE_SCRIPT_URL);
@@ -131,36 +144,27 @@ async function fetchHistory() {
         const tbody = document.getElementById('history-body');
         
         tbody.innerHTML = data.reverse().map(row => {
-            // Remove 'T' and 'Z' if the sheet returns ISO strings
             const displayDate = typeof row[0] === 'string' && row[0].includes('T') 
-                                ? row[0].split('T')[0] 
-                                : row[0];
-
-            // Fix the 1899 Time Error by stripping the date portion if present
-            const displayTime = typeof row[5] === 'string' && row[5].includes('T')
-                                ? row[5].split('T')[1].split('.')[0]
-                                : row[5];
-
+                                ? row[0].split('T')[0] : row[0];
+            
             return `
                 <tr>
                     <td>${displayDate}</td>
-                    <td>${row[1] || 'N/A'}</td>
+                    <td>${row[1] || 'General'}</td>
                     <td>${row[3]}/${row[2]}</td>
-                    <td>${displayTime}</td>
+                    <td>${row[5]}</td> 
                 </tr>
             `;
         }).join('');
-    } catch (e) { 
-        console.error("History load failed", e); 
-    }
+    } catch (e) { console.error("History load failed", e); }
 }
 
-// 7. Dashboard Charts (Fixed Squashing)
+// 8. Performance Charts
 function initCharts(s, t) {
     const wrong = t - s;
     const chartConfig = { 
         responsive: true, 
-        maintainAspectRatio: false, // Prevents charts from squashing
+        maintainAspectRatio: false,
         plugins: { legend: { display: false } },
         scales: {
             y: { beginAtZero: true, grid: { color: '#30363d' }, ticks: { color: '#8b949e' } },
@@ -168,28 +172,24 @@ function initCharts(s, t) {
         }
     };
 
-    // Accuracy Doughnut
     new Chart(document.getElementById('c1'), { 
         type: 'doughnut', 
         data: { labels: ['C', 'W'], datasets: [{ data: [s, wrong], backgroundColor: ['#238636','#da3633'], borderWidth: 0, cutout: '70%' }] }, 
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
     });
 
-    // Score Bar
     new Chart(document.getElementById('c2'), { 
         type: 'bar', 
         data: { labels: ['C', 'W'], datasets: [{ data: [s, wrong], backgroundColor: ['#58a6ff','#f0883e'] }] }, 
         options: chartConfig 
     });
 
-    // Performance Curve
     new Chart(document.getElementById('c3'), { 
         type: 'line', 
         data: { labels: ['S', 'M', 'E'], datasets: [{ data: [0, s/2, s], borderColor: '#58a6ff', tension: 0.4 }] }, 
         options: chartConfig 
     });
 
-    // Daily Progress
     new Chart(document.getElementById('c4'), { 
         type: 'line', 
         data: { labels: ['Avg', 'Today'], datasets: [{ data: [15, (s/t)*100], borderColor: '#238636', fill: true, backgroundColor: 'rgba(35, 134, 54, 0.1)' }] }, 
