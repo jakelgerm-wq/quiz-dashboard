@@ -10,7 +10,7 @@ let state = {
 };
 
 // Replace with your current Google Web App URL
-const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby0U7038RLpJYZwvRv2ax-lZS1AFE6kzFAaVts7L2o3bUeG2QMEvfHZ-gjRRzqRrN4A/exec";
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbznqDNmA6Rhls94QJ6jXcnLOV-h3KRz031TxrKWgwgGN7Jhj6-u8EmkaukqQMVPxW4o/exec";
 
 // 2. Navigation Control
 function showPage(n) {
@@ -196,3 +196,4 @@ function initCharts(s, t) {
         options: chartConfig 
     });
 }
+
