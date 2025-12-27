@@ -94,18 +94,36 @@ function sel(key, i, val, btn) {
 }
 
 // 6. Data Processing & Sync
-async function processResults() {
+// --- Updated Page 2 Navigation ---
+function goToKeyEntry() {
+    // 1. STOP THE TIMER HERE (End of Quiz Section)
     clearInterval(state.timer);
+    
+    // 2. The final time is now locked in state.totalSeconds
+    console.log("Section Time Locked at: " + state.totalSeconds + " seconds");
+    
+    // 3. Move to the Key Entry page
+    showPage(3);
+}
+
+// --- Updated Results Processing ---
+async function processResults() {
+    // We NO LONGER clear the timer here because it's already stopped.
+    
     let score = 0;
     for(let i=1; i<=state.count; i++) {
         if(state.answers[i] === state.key[i]) score++;
     }
 
+    // This uses the time recorded when the quiz ended, 
+    // ignoring the time spent on the Key Entry page.
+    const timeFormatted = formatDuration(state.totalSeconds);
+
     const payload = {
         subject: state.subject || 'General',
         count: state.count,
         score: score,
-        time: formatDuration(state.totalSeconds) // Sends formatted duration
+        time: timeFormatted 
     };
 
     try {
@@ -172,3 +190,4 @@ function initCharts(s, t) {
         options: chartConfig 
     });
 }
+
